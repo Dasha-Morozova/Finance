@@ -1,0 +1,21 @@
+ Транзакции
+/ — список транзакций
+
+/transactions/create/ — создать
+
+/transactions/<id>/edit/ — изменить
+
+/transactions/<id>/delete/ — удалить
+
+ Категории
+/categories/ — список
+
+/categories/create/ — создать
+
+/categories/<id>/delete/ — удалить
+
+ Статистика
+/statistics/ — просмотр статистики
+
+
+/api/ — REST API (отдельно)

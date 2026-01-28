@@ -1,0 +1,55 @@
+<!-- templates/categories/category_list.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="header-row">
+        <h2>Категории</h2>
+        <a href="{% url 'category_create' %}" class="btn btn-primary">
+            <span>+</span>
+            Новая категория
+        </a>
+    </div>
+
+    {% if categories %}
+    <div class="category-grid">
+        {% for category in categories %}
+        <div class="category-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                    <h3>{{ category.name }}</h3>
+                    <span style="color: var(--secondary); font-size: 0.875rem;">
+                        {{ category.transaction_set.count }} транзакций
+                    </span>
+                </div>
+            </div>
+            
+            <div class="category-actions">
+                <a href="{% url 'transaction_list' %}?category={{ category.id }}" 
+                   class="btn btn-sm">
+                    Смотреть транзакции
+                </a>
+                
+                <form method="post" action="{% url 'category_delete' category.pk %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="btn btn-danger "
+                            onclick="return confirm('Удалить категорию «{{ category.name }}»?')">
+                        Удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📂</div>
+        <p class="empty-state-text">Категорий пока нет</p>
+        <a href="{% url 'category_create' %}" class="btn btn-primary">
+            Создать первую категорию
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

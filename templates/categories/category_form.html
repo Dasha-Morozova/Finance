@@ -1,0 +1,125 @@
+<!-- templates/categories/category_form.html -->
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Редактировать категорию{% else %}Новая категория{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 500px; margin: 40px auto;">
+    <div class="card shadow-sm">
+        <div class="card-header text-white" style="background-color: #1976d2; border-radius: 8px 8px 0 0; padding: 20px;">
+            <h4 class="mb-0 text-center" style="color: #fff;">
+                {% if object %}✏️ Редактировать категорию{% else %}➕ Новая категория{% endif %}
+            </h4>
+        </div>
+        
+        <div class="card-body" style="padding: 30px;">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger" style="margin-bottom: 20px;">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <div class="mb-4">
+                    <label for="id_name" class="form-label" style="font-weight: 600; margin-bottom: 8px;">
+                        Название
+                    </label>
+                    <input type="text" 
+                           name="name" 
+                           id="id_name" 
+                           class="form-control {% if form.name.errors %}is-invalid{% endif %}" 
+                           placeholder="Продукты"
+                           value="{{ form.name.value|default:'' }}"
+                           style="padding: 12px; font-size: 16px; border: 2px solid #dee2e6; border-radius: 6px;"
+                           required>
+                    
+                    {% if form.name.errors %}
+                    <div class="invalid-feedback" style="color: #dc3545; font-size: 14px; margin-top: 5px;">
+                        {{ form.name.errors.0 }}
+                    </div>
+                    {% endif %}
+                    
+                    <div style="color: #6c757d; font-size: 14px; margin-top: 8px;">
+                        Укажите понятное название для категории
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                    <a href="{% url 'category_list' %}" 
+                       class="btn" 
+                       style="flex: 1; padding: 12px; background-color: #6c757d; color: white; border: none; border-radius: 6px; text-decoration: none; text-align: center;">
+                        ← Назад
+                    </a>
+                    
+                    <button type="submit" 
+                            class="btn" 
+                            style="flex: 1; padding: 12px; background-color: #1976d2; color: white; border: none; border-radius: 6px; font-weight: 600;">
+                        {% if object %}Сохранить{% else %}Создать{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card-footer" style="background-color: #f8f9fa; padding: 15px; text-align: center; border-radius: 0 0 8px 8px;">
+            <small style="color: #6c757d;">
+                {% if object %}
+                    Категория будет обновлена для всех связанных транзакций
+                {% else %}
+                    * После создания категорию можно использовать для транзакций
+                {% endif %}
+            </small>
+        </div>
+    </div>
+</div>
+
+<style>
+.container {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-control:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    outline: none;
+}
+
+.btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+    
+    .card-body {
+        padding: 20px !important;
+    }
+    
+    div[style*="display: flex"] {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+</style>
+{% endblock %}

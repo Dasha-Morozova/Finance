@@ -1,0 +1,306 @@
+<!-- templates/transactions/statistics.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Статистика{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Заголовок -->
+    <div class="header-row">
+        <h1>Статистика</h1>
+    </div>
+    
+    <!-- Форма фильтрации по дате -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="filter-form">
+                <div class="form-group row g-3">
+                    <div class="col-md-4">
+                        <label for="from_date" class="form-label">С</label>
+                        <input type="date" class="form-control" id="from_date" 
+                               name="from_date" value="{{ from_date }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="to_date" class="form-label">По</label>
+                        <input type="date" class="form-control" id="to_date" 
+                               name="to_date" value="{{ to_date }}">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end" style="margin-top: 1rem;">
+                        <button type="submit" class="btn btn-primary w-100">Применить</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Основные показатели -->
+    <div class="stats-summary mb-4">
+        <div class="stat-card">
+            <h3>Доходы</h3>
+            <p class="income">{{ total_income }} ₽</p>
+        </div>
+        <div class="stat-card">
+            <h3>Расходы</h3>
+            <p class="expense">{{ total_expense }} ₽</p>
+        </div>
+        <div class="stat-card">
+            <h3>Баланс</h3>
+            <p class="{% if balance >= 0 %}income{% else %}expense{% endif %}">{{ balance }} ₽</p>
+        </div>
+    </div>
+    
+    <!-- Графики -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Динамика по месяцам</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Расходы по категориям</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Таблицы детальной статистики -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Топ расходов по категориям</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm m-0">
+                            <thead>
+                                <tr>
+                                    <th>Категория</th>
+                                    <th class="text-end">Сумма</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in expense_by_category %}
+                                <tr>
+                                    <td>{{ category.category__name }}</td>
+                                    <td class="text-end expense">{{ category.total }} ₽</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center py-3">Нет данных</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Крупнейшие транзакции</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm m-0">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Описание</th>
+                                    <th class="text-end">Сумма</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in largest_transactions %}
+                                <tr>
+                                    <td>{{ transaction.date|date:"d.m.Y" }}</td>
+                                    <td class="text-truncate" style="max-width: 150px;">{{ transaction.description|default:"-" }}</td>
+                                    <td class="text-end {% if transaction.type == 'income' %}income{% else %}expense{% endif %}">
+                                        {{ transaction.amount }} ₽
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-3">Нет данных</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript для графиков -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Преобразуем данные из Django в JavaScript
+const monthlyData = JSON.parse('{{ monthly_trend_json|escapejs }}');
+const expenseCategories = JSON.parse('{{ expense_by_category_json|escapejs }}');
+
+// Цвета 
+const primaryColor = 'rgb(25, 118, 210)';
+const successColor = 'rgb(76, 175, 80)';
+const dangerColor = 'rgb(244, 67, 54)';
+const infoColor = 'rgb(33, 150, 243)';
+
+
+// График динамики по месяцам
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: Object.keys(monthlyData),
+        datasets: [
+            {
+                label: 'Доходы',
+                data: Object.values(monthlyData).map(d => d.income),
+                borderColor: successColor,
+                backgroundColor: successColor + '20',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: false
+            },
+            {
+                label: 'Расходы',
+                data: Object.values(monthlyData).map(d => d.expense),
+                borderColor: dangerColor,
+                backgroundColor: dangerColor + '20',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: 15
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    drawBorder: false
+                },
+                ticks: {
+                    callback: function(value) {
+                        return value + ' ₽';
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+
+
+
+
+
+// Массив цветов для категорий
+const categoryColors = [
+    dangerColor,          // Основной цвет расходов
+    primaryColor,         // Основной цвет
+    successColor,         // Цвет успеха
+    '#FF9800',            // Оранжевый
+    '#9C27B0',            // Фиолетовый
+    '#795548',            // Коричневый
+    '#607D8B',            // Синий серый
+    '#00BCD4',            // Бирюзовый
+    '#8BC34A',            // Светло-зеленый
+    '#FF5722'             // Глубокий оранжевый
+];
+
+// Круговой график расходов по категориям
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+        labels: expenseCategories.map(c => c.category__name),
+        datasets: [{
+            data: expenseCategories.map(c => c.total),
+            backgroundColor: [
+                '#1976d2', '#4caf50','#00BCD4','#9C27B0', '#FF9800', 
+                '#795548','#f44336', '#607D8B',  '#8BC34A', '#FF5722'
+            ].slice(0, expenseCategories.length),
+            borderWidth: 1,
+            borderColor: '#ffffff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 3.5, 
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    color: '#212121',
+                    font: {
+                        size: 14, 
+                        family: "'-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', sans-serif"
+                    },
+                    padding: 12, 
+                    boxWidth: 8,  
+                    boxHeight: 8
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const value = context.raw;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = Math.round((value / total) * 100);
+                        return `${context.label}: ${value} ₽ (${percentage}%)`;
+                    }
+                },
+                titleFont: {
+                    size: 12
+                },
+                bodyFont: {
+                    size: 12
+                },
+                padding: 8
+            }
+        },
+        cutout: '55%', 
+        layout: {
+            padding: {
+                left: 5,
+                right: 5,
+                top: 5,
+                bottom: 5
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

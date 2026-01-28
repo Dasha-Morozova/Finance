@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Транзакции{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header-row">
+        <h1>Транзакции</h1>
+        <a href="{% url 'transaction_create' %}" class="btn btn-primary">
+            <span>+</span>
+            Добавить транзакцию
+        </a>
+    </div>
+
+    <!-- Фильтры -->
+    <form method="get" class="filter-form">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="form-group">
+                <select name="type" onchange="this.form.submit()" class="form-select">
+                    <option value="">Все типы</option>
+                    <option value="income" {% if request.GET.type == 'income' %}selected{% endif %}>Доходы</option>
+                    <option value="expense" {% if request.GET.type == 'expense' %}selected{% endif %}>Расходы</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <select name="category" onchange="this.form.submit()" class="form-select">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"i" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <select name="ordering" onchange="this.form.submit()" class="form-select">
+                    <option value="-date" {% if request.GET.ordering == '-date' %}selected{% endif %}>Сначала новые</option>
+                    <option value="date" {% if request.GET.ordering == 'date' %}selected{% endif %}>Сначала старые</option>
+                    <option value="amount" {% if request.GET.ordering == 'amount' %}selected{% endif %}>По сумме ↑</option>
+                    <option value="-amount" {% if request.GET.ordering == '-amount' %}selected{% endif %}>По сумме ↓</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <input type="date" name="date_from" value="{{ request.GET.date_from }}" 
+                       placeholder="От даты" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <input type="date" name="date_to" value="{{ request.GET.date_to }}" 
+                       placeholder="До даты" class="form-input">
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary">Применить</button>
+            <a href="{% url 'transaction_list' %}" class="btn">Сбросить</a>
+        </div>
+    </form>
+
+ 
+    {% if transactions %}
+        <!-- Итоги -->
+    <table class="table" >
+        <tbody>
+            <tr class="table-totals">
+                <td colspan="3"><strong>Итого:</strong></td>
+                <td class="income"><strong>{{ total_income }}</strong></td>
+                <td class="expense"><strong>{{ total_expense }}</strong></td>
+                <td>
+                    <strong>Баланс: 
+                        <span style="color: {% if balance >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                            {{ balance }}
+                        </span>
+                    </strong>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+   <!-- Таблица транзакций -->    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Категория</th>
+                <th>Описание</th>
+                <th>Сумма</th>
+                <th>Тип</th>
+                <th style="width: 100px;">Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.date|date:"d.m.Y" }}</td>
+                <td>
+                    <span style="font-weight: 500;">{{ transaction.category.name }}</span>
+                </td>
+                <td>
+                    <span style="color: var(--secondary);">
+                        {{ transaction.description|default:"—"|truncatechars:30 }}
+                    </span>
+                </td>
+                <td class="{% if transaction.type == 'income' %}income{% else %}expense{% endif %}">
+                    {{ transaction.amount }}
+                </td>
+                <td>
+                    <span class="badge {% if transaction.type == 'income' %}badge-success{% else %}badge-danger{% endif %}">
+                        {{ transaction.get_type_display }}
+                    </span>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="{% url 'transaction_update' transaction.pk %}" 
+                           class="btn btn-sm" 
+                           title="Редактировать">
+                            ✏️
+                        </a>
+                        <a href="{% url 'transaction_delete' transaction.pk %}" 
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Удалить транзакцию?')"
+                           title="Удалить">
+                            🗑️
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">💸</div>
+        <p class="empty-state-text">Транзакций не найдено</p>
+        <p style="color: var(--secondary); margin-bottom: 1.5rem; font-size: 0.875rem;">
+            Попробуйте изменить параметры фильтрации
+        </p>
+        <a href="{% url 'transaction_list' %}" class="btn">Сбросить фильтры</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
