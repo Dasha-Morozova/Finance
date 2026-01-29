@@ -118,18 +118,27 @@
                            title="Редактировать">
                             ✏️
                         </a>
-                        <a href="{% url 'transaction_delete' transaction.pk %}" 
-                           class="btn btn-danger btn-sm"
-                           onclick="return confirm('Удалить транзакцию?')"
-                           title="Удалить">
+                        <button type="button" 
+                                class="btn btn-danger btn-sm"
+                                onclick="if(confirm('Удалить транзакцию?')) {
+                                            document.getElementById('delete-form-{{ transaction.pk }}').submit();
+                                        }"
+                                title="Удалить">
                             🗑️
-                        </a>
+                        </button>
+                        <form id="delete-form-{{ transaction.pk }}" 
+                            method="post" 
+                            action="{% url 'transaction_delete' transaction.pk %}" 
+                            style="display: none;">
+                            {% csrf_token %}
+                        </form>
                     </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
     
 
     {% else %}

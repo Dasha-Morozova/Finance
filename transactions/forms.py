@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django import forms
 from .models import Transaction, Category
 
@@ -16,6 +17,8 @@ class TransactionForm(forms.ModelForm):
         
         if user:
             self.fields['category'].queryset = Category.objects.filter(user=user)
+        
+
 
 
 class CategoryForm(forms.ModelForm):

@@ -30,14 +30,18 @@
                     Смотреть транзакции
                 </a>
                 
-                <form method="post" action="{% url 'category_delete' category.pk %}" style="margin: 0;">
-                    {% csrf_token %}
-                    <button type="submit" 
-                            class="btn btn-danger "
-                            onclick="return confirm('Удалить категорию «{{ category.name }}»?')">
-                        Удалить
-                    </button>
-                </form>
+<button type="button" 
+        class="btn btn-danger"
+        onclick="confirmDelete({{ category.pk }}, '{{ category.name|escapejs }}')">
+    Удалить
+</button>
+
+<form id="delete-form-{{ category.pk }}" 
+      method="post" 
+      action="{% url 'category_delete' category.pk %}" 
+      style="display: none;">
+    {% csrf_token %}
+</form>
             </div>
         </div>
         {% endfor %}
@@ -51,5 +55,12 @@
         </a>
     </div>
     {% endif %}
+<script>
+function confirmDelete(id, name) {
+    if (confirm(`Удалить категорию «${name}»?`)) {
+        document.getElementById(`delete-form-${id}`).submit();
+    }
+}
+</script>    
 </div>
 {% endblock %}
